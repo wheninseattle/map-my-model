@@ -9,6 +9,9 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 
+  --primary-color: #ECF0F1;
+  --secondary-color: #3498DB;
+
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,
     #16abff33 0deg,
@@ -98,6 +101,35 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.btn {
+  margin: 5px;
+  padding: 3px;
+  border-radius: 5px;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
+}
+
+.btnActive {
+  color: var(--primary-color);
+  background-color: var(--secondary-color);
+}
+
+.icon {
+  stroke: var(--primary-color);
+  /* background-color: var(--secondary-color); */
+  height: 32px;
+  width: 32px;
+}
+
+.iconButton {
+  width: 64px;
+  height: 64px;
+  background-color: var(--secondary-color);
+  color: var(--secondary-color);
+  z-index: 2;
 }
 
 @media (prefers-color-scheme: dark) {

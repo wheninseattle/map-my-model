@@ -3,6 +3,8 @@ import { useRef, useState, useEffect } from "react";
 
 import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
 
+import ControlPanel from "./controlPanel";
+
 import styles from "@/styles/Map.module.css";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -15,8 +17,8 @@ const defaultPitch = 60;
 const mapStyles = {
   light: "mapbox://styles/mapbox/light-v11",
   dark: "mapbox://styles/mapbox/dark-v11",
-  satellite: "mapbox://styles/mapbox/satellite-streets-v12"
-}
+  satellite: "mapbox://styles/mapbox/satellite-streets-v12",
+};
 
 export default function Map() {
   //Map default state
@@ -60,7 +62,7 @@ export default function Map() {
             map.current.removeLayer(mapLayers[layer].id);
           }
         }
-        console.log(map.current)
+        console.log(map.current);
         // Load 3D buildings
         map.current.addLayer({
           id: "3d-buildings",
@@ -100,19 +102,22 @@ export default function Map() {
     }
   });
 
-  const onToggleMapMode = () => {
-    setMapStyle(mapStyle===mapStyles.dark ? mapStyles.satellite : mapStyles.dark);
+  const onToggleMapMode = (mapMode) => {
+    console.log(mapMode)
+    setMapStyle(
+      mapStyles[mapMode]
+    );
   };
 
   return (
     <div>
-      <div className={styles.dataPanel}>
-        Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+      <div className={`${styles.panel} ${styles.dataPanel}`}>
+        Latitude: {lat} | Longitude: {lng} | Zoom: {zoom}
       </div>
       <div ref={mapContainer} className={styles.mapContainer}></div>
-      <button onClick={onToggleMapMode} className={styles.dataPanel}>
-        Toggle
-      </button>
+      <div className={styles.controlPanel}>
+      </div>
+      <ControlPanel onToggleMapMode={onToggleMapMode} mapStyles={mapStyles} mapStyle={mapStyle} />
     </div>
   );
 }

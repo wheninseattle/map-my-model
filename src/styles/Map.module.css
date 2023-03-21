@@ -1,4 +1,4 @@
-.mapContainer{
+.mapContainer {
     position: absolute;
     top: 0;
     left: 0;
@@ -7,12 +7,31 @@
     z-index: 1;
 }
 
-.dataPanel{
+.panel {
+    background-color: var(--primary-color);
+    border-radius: 5px;
+}
+
+.dataPanel {
     position: absolute;
     text-align: center;
-    width: 100%;
-    top: 5px;
+    width: 200px;
+    top: 10px;
+    left: 10px;
     color: #3498DB;
+    z-index: 2;
+}
+
+.controlPanel {
+    position: absolute;
+    width: 64px;
+    max-width: 150px;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    right: 10px;
+    top: 10px;
     background-color: #ECF0F1;
     z-index: 2;
+
 }
