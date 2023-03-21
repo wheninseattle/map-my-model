@@ -27,15 +27,29 @@ export default function Map() {
         setZoom(map.current.getZoom().toFixed(2));
       });
     } else {
+
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        // style: 'mapbox://styles/mapbox/streets-v12',
-        style: "mapbox://styles/mapbox/dark-v11",
+        style: "mapbox://styles/mapbox/light-v11",
+        // style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        // style: "mapbox://styles/mapbox/dark-v11",
         center: [lng, lat],
         zoom: zoom,
       });
+
+      // Programmatically remove all map labels per instructions 
+      map.current.on("load", () => {
+        const mapLayers = map.current.style._layers;
+        for (const layer in mapLayers) {
+          if (mapLayers[layer].type === "symbol") {
+            console.log(mapLayers[layer].id);
+            map.current.removeLayer(mapLayers[layer].id);
+          }
+        }
+      });
     }
   });
+
   return (
     <div>
       <div className={styles.dataPanel}>
