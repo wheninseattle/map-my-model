@@ -3,10 +3,11 @@ import React from "react";
 import styles from "@/styles/Map.module.css";
 
 function ControlPanel(props) {
-  const { onToggleMapMode, mapStyles, mapStyle } = props;
+  const { onToggleMapMode, onImportModel, mapStyles, mapStyle } = props;
   const currentMapMode = Object.keys(mapStyles).find(
     (key) => mapStyles[key] === mapStyle
   );
+
   return (
     <div className={`${styles.panel} ${styles.controlPanel}`}>
       {Object.keys(mapStyles).map((mapMode) => {
@@ -17,10 +18,12 @@ function ControlPanel(props) {
             key={mapMode}
           >
             {`Toggle ${mapMode} mode`}
-            {console.log("mapMode", mapMode)}
           </button>
         );
       })}
+      <button className="btn" onClick={onImportModel}>
+        Upload Model
+      </button>
     </div>
   );
 }
