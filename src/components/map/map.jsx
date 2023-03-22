@@ -2,22 +2,20 @@ import React from "react";
 import { useRef, useState, useEffect } from "react";
 
 import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
-import * as THREE from 'three';
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader"
-
+import * as THREE from "three";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
 import addExtrudedBuildingLayer from "@/utils/addExtrudedBuildings";
 
 import ControlPanel from "./controlPanel";
 
 import styles from "@/styles/Map.module.css";
-// import importModel from "@/utils/importModel";
-
+import removeMapLabels from "@/utils/removeMapLabels";
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 const defaultMapCenter = [47.6165, -122.3548]; // Olympic Sculpture Park, Seattle
 const [defaultLat, defaultLng] = defaultMapCenter;
-const defaultZoomLevel = 12;
+const defaultZoomLevel = 18;
 const defaultPitch = 60;
 
 const mapStyles = {
@@ -42,6 +40,7 @@ export default function Map() {
   useEffect(() => {
     if (map.current) {
       map.current.setStyle(mapStyle);
+      removeMapLabels(map);
     }
   }, [mapStyle]);
 
@@ -61,95 +60,143 @@ export default function Map() {
         pitch: defaultPitch,
         antialias: true,
       });
-
       map.current.on("load", () => {
+      });
+      map.current.on("styledata", () => {
         // Programmatically remove all map labels per instructions
-        const mapLayers = map.current.style._layers;
-        for (const layer in mapLayers) {
-          if (mapLayers[layer].type === "symbol") {
-            console.log(mapLayers[layer].id);
-            map.current.setLayoutProperty(mapLayers[layer].id, 'visibility', 'none');
-            // map.current.removeLayer(mapLayers[layer].id);
-          }
-        }
-        console.log(map.current);
+        removeMapLabels(map);
         // Load 3D buildings
         addExtrudedBuildingLayer(map);
+        // TODO: Reestablish model after set style - check out: https://stackoverflow.com/questions/52031176/in-mapbox-how-do-i-preserve-layers-when-using-setstyle
+        if (model) {
+          map.current.addLayer(userModelLayer, "tunnel-steps");
+        }
       });
     }
   });
-
-  useEffect(() => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-
-    const scene = new THREE.Scene();
-
-    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 5);
-
-    // const controls = new OrbitControls(camera, renderer.domElement);
-
-    const light = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(light);
-
-    const three = { renderer, scene, camera };
-    setThree(three);
-
-    return () => {
-      three.renderer.dispose();
-    };
-  }, []);
 
   const onToggleMapMode = (mapMode) => {
     setMapStyle(mapStyles[mapMode]);
   };
 
   const onImportModel = () => {
-    // importModel(map,lng,lat)
     fileUpload.current.click();
   };
 
   const onFileChange = (event) => {
     const file = event.target.files[0];
     // Documentation for Three.js OBJLoader: https://threejs.org/docs/#examples/en/loaders/OBJLoader
-    if(file.type == 'model/obj'){
-      const loader = new OBJLoader();
-      const fileURL = URL.createObjectURL(file);
-      console.log('fileURL', fileURL)
-      loader.load(fileURL,
-        (obj)=>{
-          console.log('obj', obj)
-          if(map){
-            const model = three.scene.add(obj);
-            // Go here - do we want to do stuff before we add to scene?
-            console.log('model', model)
-            model.position.set(0,0,0);
-            three.scene.add(model)
-            setModel(model);
-          }
-        })
-      console.log('Let us do this')
-    }else{
-      console.log('Error: .Obj files only please.')
-    }
-    // if(three && map){
-    //   const loader = new GLTFLoader();
-    //   loader.load(
+    if (file.type == "model/obj") {
+      // parameters to ensure the model is georeferenced correctly on the map
+      const modelOrigin = [lng, lat];
+      const modelAltitude = 0;
+      const modelRotate = [Math.PI / 2, 0, 0];
 
-    //   )
-    // }
-  }
+      const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+        modelOrigin,
+        modelAltitude
+      );
+
+      // transformation parameters to position, rotate and scale the 3D model onto the map
+      const modelTransform = {
+        translateX: modelAsMercatorCoordinate.x,
+        translateY: modelAsMercatorCoordinate.y,
+        translateZ: modelAsMercatorCoordinate.z,
+        rotateX: modelRotate[0],
+        rotateY: modelRotate[1],
+        rotateZ: modelRotate[2],
+        /* Since the 3D model is in real world meters, a scale transform needs to be
+         * applied since the CustomLayerInterface expects units in MercatorCoordinates.
+         */
+        scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits(),
+      };
+
+      const userModelLayer = {
+        id: "userModel",
+        type: "custom",
+        renderingMode: "3d",
+        onAdd: function (map, gl) {
+          this.camera = new THREE.Camera();
+          this.scene = new THREE.Scene();
+          // create two three.js lights to illuminate the model
+          const directionalLight = new THREE.DirectionalLight(0xffffff);
+          directionalLight.position.set(0, -70, 100).normalize();
+          this.scene.add(directionalLight);
+
+          const directionalLight2 = new THREE.DirectionalLight(0xffffff);
+          directionalLight2.position.set(0, 70, 100).normalize();
+          this.scene.add(directionalLight2);
+
+          // Use three.js ObjLoader
+          const loader = new OBJLoader();
+          const fileURL = URL.createObjectURL(file);
+          loader.load(fileURL, (obj) => {
+            const model = this.scene.add(obj);
+            setModel(model);
+          });
+          this.map = map.current;
+
+          // use the Mapbox GL JS map canvas for three.js
+          this.renderer = new THREE.WebGLRenderer({
+            canvas: map.getCanvas(),
+            context: gl,
+            antialias: true,
+          });
+
+          this.renderer.autoClear = false;
+        },
+        render: function (gl, matrix) {
+          const rotationX = new THREE.Matrix4().makeRotationAxis(
+            new THREE.Vector3(1, 0, 0),
+            modelTransform.rotateX
+          );
+          const rotationY = new THREE.Matrix4().makeRotationAxis(
+            new THREE.Vector3(0, 1, 0),
+            modelTransform.rotateY
+          );
+          const rotationZ = new THREE.Matrix4().makeRotationAxis(
+            new THREE.Vector3(0, 0, 1),
+            modelTransform.rotateZ
+          );
+
+          const m = new THREE.Matrix4().fromArray(matrix);
+          const l = new THREE.Matrix4()
+            .makeTranslation(
+              modelTransform.translateX,
+              modelTransform.translateY,
+              modelTransform.translateZ
+            )
+            .scale(
+              new THREE.Vector3(
+                modelTransform.scale,
+                -modelTransform.scale,
+                modelTransform.scale
+              )
+            )
+            .multiply(rotationX)
+            .multiply(rotationY)
+            .multiply(rotationZ);
+
+          this.camera.projectionMatrix = m.multiply(l);
+          this.renderer.resetState();
+          this.renderer.render(this.scene, this.camera);
+          map.current.triggerRepaint();
+        },
+      };
+      setModel(userModelLayer);
+      map.current.addLayer(userModelLayer, "tunnel-steps");
+    }
+  };
 
   return (
     <div>
-      <input type="file" id="file" ref={fileUpload} style={{display:'none'}} onChange={onFileChange}/>
+      <input
+        type="file"
+        id="file"
+        ref={fileUpload}
+        style={{ display: "none" }}
+        onChange={onFileChange}
+      />
       <div className={`${styles.panel} ${styles.dataPanel}`}>
         Latitude: {lat} | Longitude: {lng} | Zoom: {zoom}
       </div>
