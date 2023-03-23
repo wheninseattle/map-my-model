@@ -7,7 +7,7 @@ export default function AddPointForm({
   setCurrentPoint,
   onAddPointSubmit,
 }) {
-  const { lat, lng } = currentPoint;
+  const { lng, lat } = currentPoint;
   const onChange = (e) => {
     setCurrentPoint((currentPoint) => {
       return {
@@ -24,7 +24,7 @@ export default function AddPointForm({
     e.preventDefault();
     onAddPointSubmit();
   };
-  console.log('currentPoint', currentPoint)
+  console.log("currentPoint", currentPoint);
 
   return (
     <form action="" className={styles.addForm}>

@@ -13,8 +13,8 @@ export default function DataPanel({ lat, lng, zoom, map }) {
   const [markers, SetMarkers] = useState([]);
   const onAddPoint = () => {
     setCurrentPoint({
-      lat: lat,
       lng: lng,
+      lat: lat,
     });
   };
   const onAddPointSubmit = () => {
@@ -49,12 +49,55 @@ export default function DataPanel({ lat, lng, zoom, map }) {
   };
 
   const updateMarker = (coordinates, id) => {
-    const currentMarker = markers.filter((marker) => {
-      return marker.id == id;
-    })[0];
-    console.log('currentMarker', currentMarker)
-    console.log('coordinates', coordinates)
-    // currentMarker.marker.setLngLat(coordinates).addTo(map.current)
+    console.log(coordinates);
+    const markerIndex = markers.findIndex((marker) => marker.id == id);
+    if (markerIndex != -1) {
+      const markerToUpdate = markers[markerIndex];
+      const updatedMarker = markerToUpdate.marker
+        .setLngLat(coordinates)
+        .addTo(map.current);
+
+      const updatedMarkers = [
+        ...markers.slice(0, markerIndex),
+        { id: id, marker: updatedMarker },
+        ...markers.slice(markerIndex + 1),
+      ];
+      SetMarkers(updatedMarkers);
+    }
+    const pointIndex = points.findIndex((point) => point.id == id);
+    if (pointIndex != -1) {
+      const pointToUpdate = {
+        id: id,
+        coordinates: [coordinates.lng, coordinates.lat],
+      };
+      const updatedPoints = [
+        ...points.slice(0, pointIndex),
+        pointToUpdate,
+        ...points.slice(pointIndex + 1),
+      ];
+      console.log("updatedPoints", updatedPoints);
+      SetPoints(updatedPoints);
+    }
+  };
+
+  const deleteLocation = (id) => {
+    const markerIndex = markers.findIndex((marker) => marker.id == id);
+    if (markerIndex != -1) {
+      const markerToRemove = markers[markerIndex];
+      markerToRemove.marker.remove();
+    }
+
+    SetMarkers((markers) => {
+      return markers.filter((marker) => {
+        return marker.id != id;
+      });
+    });
+
+    SetPoints((points) => {
+      return points.filter((point) => {
+        return point.id != id;
+      });
+    });
   };
   const flyToPoint = (lng, lat) => {
     map.current.flyTo({
@@ -86,6 +129,7 @@ export default function DataPanel({ lat, lng, zoom, map }) {
                 point={point}
                 updateMarker={updateMarker}
                 flyToPoint={flyToPoint}
+                deleteLocation={deleteLocation}
               />
             );
           })}

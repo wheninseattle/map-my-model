@@ -1,20 +1,29 @@
 import React, { useState } from "react";
 import AddPointForm from "./addPointForm";
 
-export default function LocationEntry({ point, updateMarker, flyToPoint }) {
+export default function LocationEntry({
+  point,
+  updateMarker,
+  flyToPoint,
+  deleteLocation,
+}) {
   const { coordinates, id } = point;
   const [newCoordinates, setNewCoordinates] = useState(null);
   const [lng, lat] = coordinates;
-    console.log('coordinates', coordinates)
   const onFlyToPoint = () => {
     flyToPoint(lng, lat);
   };
 
   const onEdit = () => {
-    setNewCoordinates([lng, lat]);
+    setNewCoordinates({lng:lng,lat:lat});
   };
   const onUpdateMarker = () => {
     updateMarker(newCoordinates, id);
+    setNewCoordinates(null)
+  };
+
+  const onDeleteMarker = () => {
+    deleteLocation(id);
   };
 
   return (
@@ -25,10 +34,10 @@ export default function LocationEntry({ point, updateMarker, flyToPoint }) {
       </p>
       <button onClick={onFlyToPoint}>Fly</button>
       <button onClick={onEdit}>Edit</button>
-      <button>Delete</button>
+      <button onClick={onDeleteMarker}>Delete</button>
       {newCoordinates && (
         <AddPointForm
-          currentPoint={coordinates}
+          currentPoint={newCoordinates}
           setCurrentPoint={setNewCoordinates}
           onAddPointSubmit={onUpdateMarker}
         />
