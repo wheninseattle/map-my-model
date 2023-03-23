@@ -1,16 +1,42 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import styles from "@/styles/Map.module.css";
 import mapboxgl from "mapbox-gl";
-
 import AddPointForm from "./addPointForm";
 import LocationEntry from "./locationEntry";
+import mapboxData from "@/utils/mapBoxData";
 
 export default function DataPanel({ lat, lng, zoom, map }) {
   const [currentPoint, setCurrentPoint] = useState(null);
   const [lastId, setLastId] = useState(0);
   const [points, SetPoints] = useState([]);
   const [markers, SetMarkers] = useState([]);
+
+  const mapboxDataClient = new mapboxData();
+
+  useEffect(() => {
+    console.log('Pulling data...') // Do we need to move this component out of map, so it doesn't rerender as the map's state changes? - App?
+    mapboxDataClient.getDatasetFeatures().then((data) => {
+      if (data.features && data.features.length > 0) {
+        data.features.map((feature) => {
+          const newPoint = {
+            id: feature.id,
+            coordinates: feature.geometry.coordinates,
+          };
+          const pointExists = points.find((point) => point.id == feature.id);
+          if (!pointExists) {
+            SetPoints([...points, newPoint]);
+          }
+          const  markerExists = markers.find(marker => marker.id == feature.id)
+          if(!markerExists){
+            const [lng,lat] = feature.geometry.coordinates;
+            createMaker(lng,lat,feature.id)
+          }
+        });
+      }
+    });
+  });
+
   const onAddPoint = () => {
     setCurrentPoint({
       lng: lng,

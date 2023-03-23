@@ -89,12 +89,16 @@ export default function Map() {
 
   const onImportModel = () => {
     fileUpload.current.click();
+    console.log('Trying to upload 1')
   };
-
+  
   const onFileChange = (event) => {
+    console.log('Trying to upload 2')
     const file = event.target.files[0];
+    console.log('file', file)
+    console.log('file.type', file.type)
     // Documentation for Three.js OBJLoader: https://threejs.org/docs/#examples/en/loaders/OBJLoader
-    if (file.type == "model/obj") {
+    if (file.type == "model/obj" || file.type == '') {
       // parameters to ensure the model is georeferenced correctly on the map
       const modelOrigin = [lng, lat];
       const modelAltitude = 0;
@@ -190,9 +194,14 @@ export default function Map() {
           map.current.triggerRepaint();
         },
       };
+    console.log('Trying to upload 3')
+
       setModel(userModelLayer);
       map.current.addLayer(userModelLayer, "tunnel-steps");
+      console.log('userModelLayer', userModelLayer)
     }
+    console.log('Trying to upload 4')
+
   };
 
   return (
