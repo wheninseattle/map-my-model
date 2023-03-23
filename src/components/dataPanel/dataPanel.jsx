@@ -39,6 +39,18 @@ export default function DataPanel({ lat, lng, zoom, map }) {
       .setLngLat([markerLng, markerLat])
       .addTo(map.current);
 
+    marker._element.id = id;
+
+    const onDragEnd = () => {
+      const lngLat = marker.getLngLat();
+      const lngFixed = lngLat.lng.toFixed(4);
+      const latFixed = lngLat.lat.toFixed(4);
+      const lngLatFixed = { lng: lngFixed, lat: latFixed };
+      const id = marker._element.id;
+      updateMarker(lngLatFixed, id);
+    };
+    marker.on("dragend", onDragEnd);
+
     SetMarkers((markers) => {
       const currentMarker = {
         id: id,
@@ -49,7 +61,6 @@ export default function DataPanel({ lat, lng, zoom, map }) {
   };
 
   const updateMarker = (coordinates, id) => {
-    console.log(coordinates);
     const markerIndex = markers.findIndex((marker) => marker.id == id);
     if (markerIndex != -1) {
       const markerToUpdate = markers[markerIndex];
@@ -65,17 +76,22 @@ export default function DataPanel({ lat, lng, zoom, map }) {
       SetMarkers(updatedMarkers);
     }
     const pointIndex = points.findIndex((point) => point.id == id);
+    const pointToUpdate = {
+      id: id,
+      coordinates: [coordinates.lng, coordinates.lat],
+    };
     if (pointIndex != -1) {
-      const pointToUpdate = {
-        id: id,
-        coordinates: [coordinates.lng, coordinates.lat],
-      };
       const updatedPoints = [
         ...points.slice(0, pointIndex),
         pointToUpdate,
         ...points.slice(pointIndex + 1),
       ];
-      console.log("updatedPoints", updatedPoints);
+      SetPoints(updatedPoints);
+    } else {
+      const filteredPoints = points.filter((point) => {
+        return point.id != id;
+      });
+      const updatedPoints = [...filteredPoints, pointToUpdate];
       SetPoints(updatedPoints);
     }
   };
