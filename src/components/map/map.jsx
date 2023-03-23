@@ -5,9 +5,13 @@ import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-load
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
+import openWeatherData from "@/utils/weatherData";
+
 import addExtrudedBuildingLayer from "@/utils/addExtrudedBuildings";
 
 import ControlPanel from "./controlPanel";
+import PointDragCoordinates from "./pointDragCoordinates";
+import DataPanel from "../dataPanel/dataPanel";
 
 import styles from "@/styles/Map.module.css";
 import removeMapLabels from "@/utils/removeMapLabels";
@@ -61,7 +65,59 @@ export default function Map() {
         antialias: true,
       });
       map.current.on("load", () => {
+        const canvas = map.current.getCanvasContainer();
+        const weather = new openWeatherData();
+        weather.writeData();
+        weather.readData();
+        // Add a single point to the map.
+        map.current.addSource("point", {
+          type: "geojson",
+          data: geojson,
+        });
+
+        map.current.addLayer({
+          id: "point",
+          type: "circle",
+          source: "point",
+          paint: {
+            "circle-radius": 10,
+            "circle-color": "#F84C4C", // red color
+          },
+        });
+
+        // When the cursor enters a feature in
+        // the point layer, prepare for dragging.
+        map.current.on("mouseenter", "point", () => {
+          map.current.setPaintProperty("point", "circle-color", "#3bb2d0");
+          canvas.style.cursor = "move";
+        });
+
+        map.current.on("mouseleave", "point", () => {
+          map.current.setPaintProperty("point", "circle-color", "#3887be");
+          canvas.style.cursor = "";
+        });
+
+        map.current.on("mousedown", "point", (e) => {
+          // Prevent the default map.current drag behavior.
+          e.preventDefault();
+
+          canvas.style.cursor = "grab";
+
+          map.current.on("mousemove", onMove);
+          map.current.once("mouseup", onUp);
+        });
+
+        map.current.on("touchstart", "point", (e) => {
+          if (e.points.length !== 1) return;
+
+          // Prevent the default map.current drag behavior.
+          e.preventDefault();
+
+          map.current.on("touchmove", onMove);
+          map.current.once("touchend", onUp);
+        });
       });
+
       map.current.on("styledata", () => {
         // Programmatically remove all map labels per instructions
         removeMapLabels(map);
@@ -132,7 +188,6 @@ export default function Map() {
           const fileURL = URL.createObjectURL(file);
           loader.load(fileURL, (obj) => {
             const model = this.scene.add(obj);
-            setModel(model);
           });
           this.map = map.current;
 
@@ -187,6 +242,47 @@ export default function Map() {
       map.current.addLayer(userModelLayer, "tunnel-steps");
     }
   };
+  const geojson = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [defaultLng, defaultLat],
+        },
+      },
+    ],
+  };
+
+  // Drag point functionality
+  const onMove = (e) => {
+    const canvas = map.current.getCanvasContainer();
+
+    const coordinates = e.lngLat;
+    canvas.style.cursor = "grabbing";
+    geojson.features[0].geometry.coordinates = [
+      coordinates.lng,
+      coordinates.lat,
+    ];
+    map.current.getSource("point").setData(geojson);
+  };
+
+  function onUp(e) {
+    const canvas = map.current.getCanvasContainer();
+
+    const coords = e.lngLat;
+
+    // Print the coordinates of where the point had
+    // finished being dragged to on the map.
+    // coordinates.style.display = "block";
+    // coordinates.innerHTML = `Longitude: ${coords.lng}<br />Latitude: ${coords.lat}`;
+    canvas.style.cursor = "";
+
+    // Unbind mouse/touch events
+    map.current.off("mousemove", onMove);
+    map.current.off("touchmove", onMove);
+  }
 
   return (
     <div>
@@ -197,11 +293,10 @@ export default function Map() {
         style={{ display: "none" }}
         onChange={onFileChange}
       />
-      <div className={`${styles.panel} ${styles.dataPanel}`}>
-        Latitude: {lat} | Longitude: {lng} | Zoom: {zoom}
-      </div>
+      <DataPanel lat={lat} lng={lng} zoom={zoom} map={map} />
       <div ref={mapContainer} className={styles.mapContainer}></div>
       <div className={styles.controlPanel}></div>
+      <PointDragCoordinates></PointDragCoordinates>
       <ControlPanel
         onToggleMapMode={onToggleMapMode}
         onImportModel={onImportModel}

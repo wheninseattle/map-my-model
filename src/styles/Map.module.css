@@ -4,7 +4,7 @@
     left: 0;
     height: 100vh;
     width: 100vw;
-    z-index: 1;
+    z-index: -1;
 }
 
 .panel {
@@ -19,7 +19,6 @@
     top: 10px;
     left: 10px;
     color: #3498DB;
-    z-index: 2;
 }
 
 .controlPanel {
@@ -32,6 +31,29 @@
     right: 10px;
     top: 10px;
     background-color: #ECF0F1;
-    z-index: 2;
+}
 
+.dragCoordinateDisplay {
+    position: absolute;
+    width: 100px;
+    height: 50px;
+    right: 50%;
+    top: 10px;
+    background-color: var(--primary-color);
+    padding: 5px;
+    transform: translateX(50%);
+}
+
+.addForm {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+    justify-content: space-between;
+    height: 125px;
+}
+
+.formSection {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
 }
