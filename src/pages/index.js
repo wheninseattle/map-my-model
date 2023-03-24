@@ -1,7 +1,8 @@
 import Head from 'next/head'
 import styles from '@/styles/Home.module.css'
 import 'mapbox-gl/dist/mapbox-gl.css';
-import Map from '@/components/map/map';
+import Map from '@/components/map/Map';
+import MapApp from '@/components/map/MapApp';
 
 export default function Home() {
   return (
@@ -13,7 +14,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <Map></Map>
+      <MapApp/>
       </main>
     </>
   )

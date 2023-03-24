@@ -2,7 +2,7 @@ import React from "react";
 
 import styles from "@/styles/Map.module.css";
 
-export default function AddPointForm({
+export default function AddLocationForm({
   currentPoint,
   setCurrentPoint,
   onAddPointSubmit,

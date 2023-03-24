@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import styles from "@/styles/Map.module.css";
 import mapboxgl from "mapbox-gl";
-import AddPointForm from "./addPointForm";
-import LocationEntry from "./locationEntry";
+import AddPointForm from "./AddLocationForm";
+import LocationEntry from "./LocationListItem";
 import mapboxData from "@/utils/mapBoxData";
 
 export default function DataPanel({ lat, lng, zoom, map }) {
@@ -15,7 +15,7 @@ export default function DataPanel({ lat, lng, zoom, map }) {
   const mapboxDataClient = new mapboxData();
 
   useEffect(() => {
-    console.log('Pulling data...') // Do we need to move this component out of map, so it doesn't rerender as the map's state changes? - App?
+    console.log("Pulling data..."); // Do we need to move this component out of map, so it doesn't rerender as the map's state changes? - App?
     mapboxDataClient.getDatasetFeatures().then((data) => {
       if (data.features && data.features.length > 0) {
         data.features.map((feature) => {
@@ -27,10 +27,12 @@ export default function DataPanel({ lat, lng, zoom, map }) {
           if (!pointExists) {
             SetPoints([...points, newPoint]);
           }
-          const  markerExists = markers.find(marker => marker.id == feature.id)
-          if(!markerExists){
-            const [lng,lat] = feature.geometry.coordinates;
-            createMaker(lng,lat,feature.id)
+          const markerExists = markers.find(
+            (marker) => marker.id == feature.id
+          );
+          if (!markerExists) {
+            const [lng, lat] = feature.geometry.coordinates;
+            createMaker(lng, lat, feature.id);
           }
         });
       }

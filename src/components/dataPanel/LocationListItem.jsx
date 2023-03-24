@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import AddPointForm from "./addPointForm";
+import AddPointForm from "./AddLocationForm";
 
-export default function LocationEntry({
+export default function LocationListItem({
   point,
   updateMarker,
   flyToPoint,
