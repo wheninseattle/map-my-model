@@ -1,40 +1,36 @@
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React, { useEffect, useState, useContext, useMemo } from "react";
 import styles from "@/styles/Map.module.css";
 import mapboxgl from "mapbox-gl";
 import AddPointForm from "./addPointForm";
 import LocationEntry from "./locationEntry";
 import mapboxData from "@/utils/mapBoxData";
+import { MapContext } from "@/context/map/MapState";
 
-export default function DataPanel({ lat, lng, zoom, map }) {
+export default function DataPanel({}) {
   const [currentPoint, setCurrentPoint] = useState(null);
   const [lastId, setLastId] = useState(0);
-  const [points, SetPoints] = useState([]);
+  const [points, setPoints] = useState([]);
   const [markers, SetMarkers] = useState([]);
+  const [initialPull, setInitialPull] = useState(false);
 
-  const mapboxDataClient = new mapboxData();
+  const userId = "wheninseattle";
+  const datasetId = "clfk0wyz20e5y2amapa49hqgp";
+
+  const mapContext = useContext(MapContext);
+  const { getLocationPoints, lng, lat, locationPoints,map} = mapContext;
 
   useEffect(() => {
-    console.log('Pulling data...') // Do we need to move this component out of map, so it doesn't rerender as the map's state changes? - App?
-    mapboxDataClient.getDatasetFeatures().then((data) => {
-      if (data.features && data.features.length > 0) {
-        data.features.map((feature) => {
-          const newPoint = {
-            id: feature.id,
-            coordinates: feature.geometry.coordinates,
-          };
-          const pointExists = points.find((point) => point.id == feature.id);
-          if (!pointExists) {
-            SetPoints([...points, newPoint]);
-          }
-          const  markerExists = markers.find(marker => marker.id == feature.id)
-          if(!markerExists){
-            const [lng,lat] = feature.geometry.coordinates;
-            createMaker(lng,lat,feature.id)
-          }
-        });
-      }
-    });
+    if (!initialPull) {
+      console.log("Pulling point data..."); // Do we need to move this component out of map, so it doesn't rerender as the map's state changes? - App?
+      getLocationPoints(userId, datasetId);
+      setInitialPull(true)
+      //       const  markerExists = markers.find(marker => marker.id == feature.id)
+      //       if(!markerExists){
+      //         const [lng,lat] = feature.geometry.coordinates;
+      //         createMaker(lng,lat,feature.id)
+      //       }
+      //     });
+    }
   });
 
   const onAddPoint = () => {
@@ -50,7 +46,7 @@ export default function DataPanel({ lat, lng, zoom, map }) {
       id: newId,
       coordinates: [lng, lat],
     };
-    SetPoints((points) => {
+    setPoints((points) => {
       return [...points, currentPoint];
     });
     setLastId(newId);
@@ -112,13 +108,13 @@ export default function DataPanel({ lat, lng, zoom, map }) {
         pointToUpdate,
         ...points.slice(pointIndex + 1),
       ];
-      SetPoints(updatedPoints);
+      setPoints(updatedPoints);
     } else {
       const filteredPoints = points.filter((point) => {
         return point.id != id;
       });
       const updatedPoints = [...filteredPoints, pointToUpdate];
-      SetPoints(updatedPoints);
+      setPoints(updatedPoints);
     }
   };
 
@@ -135,7 +131,7 @@ export default function DataPanel({ lat, lng, zoom, map }) {
       });
     });
 
-    SetPoints((points) => {
+    setPoints((points) => {
       return points.filter((point) => {
         return point.id != id;
       });
@@ -152,7 +148,9 @@ export default function DataPanel({ lat, lng, zoom, map }) {
     <div className={`${styles.panel} ${styles.dataPanel}`}>
       <h3>DataPanel</h3>
       <div>
-        Latitude: {lat} | Longitude: {lng} | Zoom: {zoom}
+        Latitude: {lat} | Longitude: {lng}
+        {/* <div> 
+      Latitude: {lat} | Longitude: {lng} | Zoom: {zoom} */}
       </div>
       {!currentPoint && <button onClick={onAddPoint}>Add Point</button>}
       {currentPoint && (
@@ -163,8 +161,8 @@ export default function DataPanel({ lat, lng, zoom, map }) {
         />
       )}
       <div>
-        {points.length > 0 &&
-          points.map((point) => {
+        {locationPoints.length > 0 &&
+          locationPoints.map((point) => {
             return (
               <LocationEntry
                 key={point.id}
