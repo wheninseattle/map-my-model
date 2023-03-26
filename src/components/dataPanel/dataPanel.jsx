@@ -3,7 +3,6 @@ import styles from "@/styles/Map.module.css";
 import mapboxgl from "mapbox-gl";
 import AddPointForm from "./addPointForm";
 import LocationEntry from "./locationEntry";
-import mapboxData from "@/utils/mapBoxData";
 import { MapContext } from "@/context/map/MapState";
 
 export default function DataPanel({}) {
@@ -11,27 +10,10 @@ export default function DataPanel({}) {
   const [lastId, setLastId] = useState(0);
   const [points, setPoints] = useState([]);
   const [markers, SetMarkers] = useState([]);
-  const [initialPull, setInitialPull] = useState(false);
-
-  const userId = "wheninseattle";
-  const datasetId = "clfk0wyz20e5y2amapa49hqgp";
 
   const mapContext = useContext(MapContext);
-  const { getLocationPoints, lng, lat, locationPoints,map} = mapContext;
+  const {lng, lat, locationPoints,map} = mapContext;
 
-  useEffect(() => {
-    if (!initialPull) {
-      console.log("Pulling point data..."); // Do we need to move this component out of map, so it doesn't rerender as the map's state changes? - App?
-      getLocationPoints(userId, datasetId);
-      setInitialPull(true)
-      //       const  markerExists = markers.find(marker => marker.id == feature.id)
-      //       if(!markerExists){
-      //         const [lng,lat] = feature.geometry.coordinates;
-      //         createMaker(lng,lat,feature.id)
-      //       }
-      //     });
-    }
-  });
 
   const onAddPoint = () => {
     setCurrentPoint({

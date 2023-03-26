@@ -7,9 +7,9 @@ export default function LocationEntry({
   flyToPoint,
   deleteLocation,
 }) {
-  const { coordinates, id } = point;
+  const { id } = point;
   const [newCoordinates, setNewCoordinates] = useState(null);
-  const [lng, lat] = coordinates;
+  const [lng, lat] = point.geometry.coordinates;
   const onFlyToPoint = () => {
     flyToPoint(lng, lat);
   };

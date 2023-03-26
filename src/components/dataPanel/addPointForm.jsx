@@ -1,4 +1,5 @@
-import React from "react";
+import React, {useContext} from "react";
+import { MapContext } from "@/context/map/MapState";
 
 import styles from "@/styles/Map.module.css";
 
@@ -7,7 +8,10 @@ export default function AddPointForm({
   setCurrentPoint,
   onAddPointSubmit,
 }) {
-  const { lng, lat } = currentPoint;
+  const mapContext = useContext(MapContext);
+  const {addPoint,lngLat} = mapContext;
+  const { lng, lat } = lngLat;
+  console.log('lngLat', lngLat)
   const onChange = (e) => {
     setCurrentPoint((currentPoint) => {
       return {
@@ -22,9 +26,10 @@ export default function AddPointForm({
 
   const onSubmit = (e) => {
     e.preventDefault();
-    onAddPointSubmit();
+    // onAddPointSubmit();
+    console.log('adding point at:', lngLat)
+    addPoint(lngLat);
   };
-  console.log("currentPoint", currentPoint);
 
   return (
     <form action="" className={styles.addForm}>

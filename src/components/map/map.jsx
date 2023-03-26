@@ -3,12 +3,9 @@ import { useRef, useState, useEffect, useContext } from "react";
 
 import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
 
-import openWeatherData from "@/utils/weatherData";
-
 import addExtrudedBuildingLayer from "@/utils/addExtrudedBuildings";
 
 import ControlPanel from "./controlPanel";
-import DataPanel from "../dataPanel/dataPanel";
 
 import styles from "@/styles/Map.module.css";
 import removeMapLabels from "@/utils/removeMapLabels";
@@ -35,7 +32,7 @@ export default function Map() {
 
   const mapContext = useContext(MapContext);
 
-  const { lng, lat, setLng, setLat, setMap } = mapContext;
+  const { lng, lat, setLngLat, setMap } = mapContext;
   // const [lng, setLng] = useState(defaultLng);
   // const [lat, setLat] = useState(defaultLat);
   const [zoom, setZoom] = useState(defaultZoomLevel);
@@ -53,13 +50,10 @@ export default function Map() {
   useEffect(() => {
     if (map.current) {
       map.current.on("move", () => {
-        setLat(map.current.getCenter().lat.toFixed(4));
-        setLng(map.current.getCenter().lng.toFixed(4));
+        setLngLat(map.current.getCenter());
         setZoom(map.current.getZoom().toFixed(2));
       });
     } else {
-      setLng(defaultLng);
-      setLat(defaultLat);
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: mapStyle,
@@ -70,13 +64,10 @@ export default function Map() {
       });
       map.current.on("load", () => {
         const canvas = map.current.getCanvasContainer();
-        const weather = new openWeatherData();
-        weather.writeData();
-        weather.readData();
+        setLngLat(map.current.getCenter());
       });
 
       map.current.on("styledata", () => {
-        console.log("mapAfterStyleChange", map);
         // Programmatically remove all map labels per instructions
         removeMapLabels(map);
         // Load 3D buildings

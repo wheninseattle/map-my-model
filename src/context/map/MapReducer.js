@@ -4,10 +4,9 @@ import {
     GET_LOCATION_POINTS
 } from '../types';
 
-export default (state, action) => {
+export default function mapReducer(state, action) {
     switch (action.type) {
         case SET_LNG:
-            console.log('action', action)
             return {
                 ...state,
                 lng: action.payload
@@ -18,7 +17,6 @@ export default (state, action) => {
                 lat: action.payload
             }
         case GET_LOCATION_POINTS:
-            console.log('action', action)
             return {
                 ...state,
                 locationPoints: action.payload
