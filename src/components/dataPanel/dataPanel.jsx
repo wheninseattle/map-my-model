@@ -69,8 +69,8 @@ export default function DataPanel({ lat, lng, zoom, map }) {
 
     const onDragEnd = () => {
       const lngLat = marker.getLngLat();
-      const lngFixed = lngLat.lng.toFixed(4);
-      const latFixed = lngLat.lat.toFixed(4);
+      const lngFixed = lngLat.lng;
+      const latFixed = lngLat.lat;
       const lngLatFixed = { lng: lngFixed, lat: latFixed };
       const id = marker._element.id;
       updateMarker(lngLatFixed, id);
