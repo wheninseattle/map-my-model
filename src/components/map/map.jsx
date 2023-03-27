@@ -32,12 +32,9 @@ export default function Map() {
 
   const mapContext = useContext(MapContext);
 
-  const { lng, lat, setLngLat, setMap } = mapContext;
-  // const [lng, setLng] = useState(defaultLng);
-  // const [lat, setLat] = useState(defaultLat);
+  const { setLngLat, setMap, modelLayer, setModelLayer } = mapContext;
   const [zoom, setZoom] = useState(defaultZoomLevel);
   const [mapStyle, setMapStyle] = useState(mapStyles.dark);
-  // const [model, setModel] = useState(null);
   const [file, setFile] = useState(null);
 
   useEffect(() => {
@@ -49,7 +46,7 @@ export default function Map() {
 
   useEffect(() => {
     if (map.current) {
-      map.current.on("move", () => {
+      map.current.on("moveend", () => {
         setLngLat(map.current.getCenter());
         setZoom(map.current.getZoom().toFixed(2));
       });
@@ -72,11 +69,10 @@ export default function Map() {
         removeMapLabels(map);
         // Load 3D buildings
         addExtrudedBuildingLayer(map);
-        // TODO: Reestablish model after set style - check out: https://stackoverflow.com/questions/52031176/in-mapbox-how-do-i-preserve-layers-when-using-setstyle
-        if (file) {
-          console.log("Style changed... trying to reload model...");
-          console.log("file", file);
-          addModelLayer(file, lng, lat, map);
+        // TODO: Reload model after set style - check out: https://stackoverflow.com/questions/52031176/in-mapbox-how-do-i-preserve-layers-when-using-setstyle
+        if (modelLayer) {
+          map.current.removeLayer("userModel");
+          map.current.addLayer(modelLayer, "tunnel-steps");
         }
         setMap(map);
       });
@@ -84,24 +80,26 @@ export default function Map() {
   });
 
   const onToggleMapMode = (mapMode) => {
-    console.log("mapBeforeStyleChange", map);
-
     setMapStyle(mapStyles[mapMode]);
   };
 
+  //TODO: Provide user with simple obj model to load if they don't have one
   const onImportModel = () => {
     if (file) {
       setFile(null);
     }
     fileUpload.current.click();
-    console.log("Trying to upload 1");
   };
 
   const onFileUpload = (event) => {
     const file = event.target.files[0];
+    const mapLng = map.current.getCenter().lng;
+    const mapLat = map.current.getCenter().lat;
     setFile(file);
-    console.log("File Uploaded");
-    addModelLayer(file, lng, lat, map);
+    const modelLayer = addModelLayer(file, mapLng, mapLat, map);
+    setModelLayer(modelLayer);
+    map.current.addLayer(modelLayer, "tunnel-steps");
+    setMap(map);
   };
 
   return (
