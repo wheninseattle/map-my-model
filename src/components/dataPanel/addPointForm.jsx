@@ -1,30 +1,58 @@
-import React from "react";
+import React, { useContext } from "react";
+import { MapContext } from "@/context/map/MapState";
 
 import styles from "@/styles/Map.module.css";
 
 export default function AddPointForm({
   currentPoint,
   setCurrentPoint,
-  onAddPointSubmit,
+  newCoordinates,
+  setNewCoordinates,
+  point,
+  onAddLocation,
+  onUpdateLocation,
 }) {
-  const { lng, lat } = currentPoint;
+  const mapContext = useContext(MapContext);
+  const { lngLat } = mapContext;
+  let lat = 0;
+  let lng = 0;
+
+  if (currentPoint) {
+    lat = currentPoint.lat;
+    lng = currentPoint.lng;
+  } else {
+    lat = newCoordinates.lat;
+    lng = newCoordinates.lng;
+  }
+
   const onChange = (e) => {
-    setCurrentPoint((currentPoint) => {
-      return {
-        ...currentPoint,
-        [e.target.name]: e.target.value,
-      };
+    const updateCoordinates = (coordinates) => ({
+      ...coordinates,
+      [e.target.name]: parseFloat(e.target.value),
     });
+    currentPoint
+      ? setCurrentPoint(updateCoordinates)
+      : setNewCoordinates(updateCoordinates);
   };
+
   const onCancel = () => {
-    setCurrentPoint(null);
+    if (currentPoint) {
+      setCurrentPoint(null);
+    } else {
+      setNewCoordinates(null);
+    }
   };
 
   const onSubmit = (e) => {
     e.preventDefault();
-    onAddPointSubmit();
+    if (currentPoint) {
+      onAddLocation(lngLat);
+      setCurrentPoint(null);
+    } else {
+      onUpdateLocation(point.id, newCoordinates);
+      setNewCoordinates(null);
+    }
   };
-  console.log("currentPoint", currentPoint);
 
   return (
     <form action="" className={styles.addForm}>

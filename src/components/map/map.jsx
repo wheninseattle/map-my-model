@@ -1,19 +1,16 @@
 import React from "react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 
 import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
-import * as THREE from "three";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
-
-import openWeatherData from "@/utils/weatherData";
 
 import addExtrudedBuildingLayer from "@/utils/addExtrudedBuildings";
 
 import ControlPanel from "./controlPanel";
-import DataPanel from "../dataPanel/dataPanel";
 
 import styles from "@/styles/Map.module.css";
 import removeMapLabels from "@/utils/removeMapLabels";
+import addModelLayer from "@/utils/addCustomModel";
+import { MapContext } from "@/context/map/MapState";
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 const defaultMapCenter = [47.6165, -122.3548]; // Olympic Sculpture Park, Seattle
@@ -33,42 +30,38 @@ export default function Map() {
   const map = useRef(null);
   const fileUpload = useRef(null);
 
-  const [lng, setLng] = useState(defaultLng);
-  const [lat, setLat] = useState(defaultLat);
+  const mapContext = useContext(MapContext);
+
+  const { setLngLat, setMap, modelLayer, setModelLayer } = mapContext;
   const [zoom, setZoom] = useState(defaultZoomLevel);
   const [mapStyle, setMapStyle] = useState(mapStyles.dark);
-  const [three, setThree] = useState(null);
-  const [model, setModel] = useState(null);
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
     if (map.current) {
       map.current.setStyle(mapStyle);
       removeMapLabels(map);
     }
-  }, [mapStyle]);
+  }, [mapStyle, map]);
 
   useEffect(() => {
     if (map.current) {
-      console.log('map', map)
-      map.current.on("move", () => {
-        setLat(map.current.getCenter().lat);
-        setLng(map.current.getCenter().lng);
+      map.current.on("moveend", () => {
+        setLngLat(map.current.getCenter());
         setZoom(map.current.getZoom().toFixed(2));
       });
     } else {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: mapStyle,
-        center: [lng, lat],
+        center: [defaultLng, defaultLat],
         zoom: zoom,
         pitch: defaultPitch,
         antialias: true,
       });
       map.current.on("load", () => {
         const canvas = map.current.getCanvasContainer();
-        const weather = new openWeatherData();
-        weather.writeData();
-        weather.readData();
+        setLngLat(map.current.getCenter());
       });
 
       map.current.on("styledata", () => {
@@ -76,10 +69,12 @@ export default function Map() {
         removeMapLabels(map);
         // Load 3D buildings
         addExtrudedBuildingLayer(map);
-        // TODO: Reestablish model after set style - check out: https://stackoverflow.com/questions/52031176/in-mapbox-how-do-i-preserve-layers-when-using-setstyle
-        if (model) {
-          map.current.addLayer(userModelLayer, "tunnel-steps");
+        // TODO: Reload model after set style - check out: https://stackoverflow.com/questions/52031176/in-mapbox-how-do-i-preserve-layers-when-using-setstyle
+        if (modelLayer) {
+          map.current.removeLayer("userModel");
+          map.current.addLayer(modelLayer, "tunnel-steps");
         }
+        setMap(map);
       });
     }
   });
@@ -88,121 +83,23 @@ export default function Map() {
     setMapStyle(mapStyles[mapMode]);
   };
 
+  //TODO: Provide user with simple obj model to load if they don't have one
   const onImportModel = () => {
-    fileUpload.current.click();
-    console.log('Trying to upload 1')
-  };
-  
-  const onFileChange = (event) => {
-    console.log('Trying to upload 2')
-    const file = event.target.files[0];
-    console.log('file', file)
-    console.log('file.type', file.type)
-    // Documentation for Three.js OBJLoader: https://threejs.org/docs/#examples/en/loaders/OBJLoader
-    if (file.type == "model/obj" || file.type == '') {
-      // parameters to ensure the model is georeferenced correctly on the map
-      const modelOrigin = [lng, lat];
-      const modelAltitude = 0;
-      const modelRotate = [Math.PI / 2, 0, 0];
-
-      const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
-        modelOrigin,
-        modelAltitude
-      );
-
-      // transformation parameters to position, rotate and scale the 3D model onto the map
-      const modelTransform = {
-        translateX: modelAsMercatorCoordinate.x,
-        translateY: modelAsMercatorCoordinate.y,
-        translateZ: modelAsMercatorCoordinate.z,
-        rotateX: modelRotate[0],
-        rotateY: modelRotate[1],
-        rotateZ: modelRotate[2],
-        /* Since the 3D model is in real world meters, a scale transform needs to be
-         * applied since the CustomLayerInterface expects units in MercatorCoordinates.
-         */
-        scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits(),
-      };
-
-      const userModelLayer = {
-        id: "userModel",
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: function (map, gl) {
-          this.camera = new THREE.Camera();
-          this.scene = new THREE.Scene();
-          // create two three.js lights to illuminate the model
-          const directionalLight = new THREE.DirectionalLight(0xffffff);
-          directionalLight.position.set(0, -70, 100).normalize();
-          this.scene.add(directionalLight);
-
-          const directionalLight2 = new THREE.DirectionalLight(0xffffff);
-          directionalLight2.position.set(0, 70, 100).normalize();
-          this.scene.add(directionalLight2);
-
-          // Use three.js ObjLoader
-          const loader = new OBJLoader();
-          const fileURL = URL.createObjectURL(file);
-          loader.load(fileURL, (obj) => {
-            const model = this.scene.add(obj);
-          });
-          this.map = map.current;
-
-          // use the Mapbox GL JS map canvas for three.js
-          this.renderer = new THREE.WebGLRenderer({
-            canvas: map.getCanvas(),
-            context: gl,
-            antialias: true,
-          });
-
-          this.renderer.autoClear = false;
-        },
-        render: function (gl, matrix) {
-          const rotationX = new THREE.Matrix4().makeRotationAxis(
-            new THREE.Vector3(1, 0, 0),
-            modelTransform.rotateX
-          );
-          const rotationY = new THREE.Matrix4().makeRotationAxis(
-            new THREE.Vector3(0, 1, 0),
-            modelTransform.rotateY
-          );
-          const rotationZ = new THREE.Matrix4().makeRotationAxis(
-            new THREE.Vector3(0, 0, 1),
-            modelTransform.rotateZ
-          );
-
-          const m = new THREE.Matrix4().fromArray(matrix);
-          const l = new THREE.Matrix4()
-            .makeTranslation(
-              modelTransform.translateX,
-              modelTransform.translateY,
-              modelTransform.translateZ
-            )
-            .scale(
-              new THREE.Vector3(
-                modelTransform.scale,
-                -modelTransform.scale,
-                modelTransform.scale
-              )
-            )
-            .multiply(rotationX)
-            .multiply(rotationY)
-            .multiply(rotationZ);
-
-          this.camera.projectionMatrix = m.multiply(l);
-          this.renderer.resetState();
-          this.renderer.render(this.scene, this.camera);
-          map.current.triggerRepaint();
-        },
-      };
-    console.log('Trying to upload 3')
-
-      setModel(userModelLayer);
-      map.current.addLayer(userModelLayer, "tunnel-steps");
-      console.log('userModelLayer', userModelLayer)
+    if (file) {
+      setFile(null);
     }
-    console.log('Trying to upload 4')
+    fileUpload.current.click();
+  };
 
+  const onFileUpload = (event) => {
+    const file = event.target.files[0];
+    const mapLng = map.current.getCenter().lng;
+    const mapLat = map.current.getCenter().lat;
+    setFile(file);
+    const modelLayer = addModelLayer(file, mapLng, mapLat, map);
+    setModelLayer(modelLayer);
+    map.current.addLayer(modelLayer, "tunnel-steps");
+    setMap(map);
   };
 
   return (
@@ -212,9 +109,9 @@ export default function Map() {
         id="file"
         ref={fileUpload}
         style={{ display: "none" }}
-        onChange={onFileChange}
+        onChange={onFileUpload}
       />
-      <DataPanel lat={lat} lng={lng} zoom={zoom} map={map} />
+      {/* <DataPanel lat={lat} lng={lng} zoom={zoom} map={map} /> */}
       <div ref={mapContainer} className={styles.mapContainer}></div>
       <div className={styles.controlPanel}></div>
       <ControlPanel

@@ -21,7 +21,7 @@ function ControlPanel(props) {
           </button>
         );
       })}
-      <button className="btn" onClick={onImportModel}>
+      <button className={`${styles.panelCard} btn`} onClick={onImportModel}>
         Upload Model
       </button>
     </div>
