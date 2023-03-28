@@ -5,8 +5,6 @@ export const MapContext = createContext();
 
 export function MapState(props) {
 
-    // let publicKey = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-
     // const userId = "wheninseattle";
     // const datasetId = "clfk0wyz20e5y2amapa49hqgp";
 
@@ -18,8 +16,6 @@ export function MapState(props) {
     const [markerList, setMarkerList] = useState([]);
 
     const [modelLayer, setModelLayer] = useState(null);
-
-
 
     // Create Point
 
@@ -90,7 +86,6 @@ export function MapState(props) {
                 return point;
             })
             return updatedPoints
-
         })
     }
 

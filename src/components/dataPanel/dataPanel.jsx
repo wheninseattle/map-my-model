@@ -1,10 +1,14 @@
 import React, { useState, useContext } from "react";
-import styles from "@/styles/Map.module.css";
 import mapboxgl from "mapbox-gl";
+
+import { MapContext } from "@/context/map/MapState";
+
 import AddPointForm from "./addPointForm";
 import LocationEntry from "./locationEntry";
-import { MapContext } from "@/context/map/MapState";
+
 import getWeatherData from "@/utils/weatherData";
+
+import styles from "@/styles/Map.module.css";
 
 export default function DataPanel({}) {
   const [currentPoint, setCurrentPoint] = useState(null);
@@ -38,11 +42,8 @@ export default function DataPanel({}) {
     const id = newLocation.id;
     let weather = await getWeatherData(lngLat).then((res) => res);
     appendWeatherToLocationPoint(id, weather);
-    createMaker(
-      newLocation.geometry.coordinates,
-      id,
-      weather.main.temp.toFixed(0)
-    );
+    const temperature = weather.main.temp.toFixed(0);
+    createMaker(newLocation.geometry.coordinates, id, temperature);
   };
 
   const onUpdateLocation = async (id, newCoordinates) => {
@@ -52,17 +53,20 @@ export default function DataPanel({}) {
     updateMarker(newCoordinates, idStr, false);
   };
 
+  // Function to execute when a marker drag is finished
   const onDragEnd = async (marker) => {
-    const lngLat = marker.getLngLat();
+    const markerLngLat = marker.getLngLat();
     const id = marker._element.id;
     const idNum = parseInt(id);
-    const weather = await getWeatherData(lngLat).then((res) => res);
+    const weather = await getWeatherData(markerLngLat).then((res) => res);
     const temp = weather.main.temp.toFixed(0) || null;
+    // Update custom weather marker with temperature
     marker._element.innerHTML = `${temp == null ? "" : temp}${
       temp == null ? "" : "\u00b0F"
     }`;
-    updateLocation(idNum, lngLat, weather);
-    updateMarker(lngLat, id, true);
+
+    updateLocation(idNum, markerLngLat, weather);
+    updateMarker(markerLngLat, id, true);
   };
 
   const createMaker = async (coordinates, id, temp) => {
