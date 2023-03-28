@@ -31,8 +31,8 @@ export default function Map() {
   const fileUpload = useRef(null);
 
   const mapContext = useContext(MapContext);
-
   const { setLngLat, setMap, modelLayer, setModelLayer } = mapContext;
+
   const [zoom, setZoom] = useState(defaultZoomLevel);
   const [mapStyle, setMapStyle] = useState(mapStyles.dark);
   const [file, setFile] = useState(null);
@@ -67,8 +67,10 @@ export default function Map() {
       map.current.on("styledata", () => {
         // Programmatically remove all map labels per instructions
         removeMapLabels(map);
+        //Get key of current map style
+        const currentStyle = Object.keys(mapStyles).find(style => mapStyles[style] == mapStyle);
         // Load 3D buildings
-        addExtrudedBuildingLayer(map);
+        addExtrudedBuildingLayer(map, currentStyle);
         // TODO: Reload model after set style - check out: https://stackoverflow.com/questions/52031176/in-mapbox-how-do-i-preserve-layers-when-using-setstyle
         if (modelLayer) {
           map.current.removeLayer("userModel");

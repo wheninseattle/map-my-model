@@ -13,10 +13,12 @@ export default function AddPointForm({
   onUpdateLocation,
 }) {
   const mapContext = useContext(MapContext);
+
   const { lngLat } = mapContext;
   let lat = 0;
   let lng = 0;
 
+  // Assign initial values to the form inputs depending on whether the user is adding a new point or editing an existing one
   if (currentPoint) {
     lat = currentPoint.lat;
     lng = currentPoint.lng;
@@ -46,7 +48,7 @@ export default function AddPointForm({
   const onSubmit = (e) => {
     e.preventDefault();
     if (currentPoint) {
-      onAddLocation(lngLat);
+      onAddLocation(currentPoint);
       setCurrentPoint(null);
     } else {
       onUpdateLocation(point.id, newCoordinates);

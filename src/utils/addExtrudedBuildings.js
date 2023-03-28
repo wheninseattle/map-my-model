@@ -1,5 +1,4 @@
-export default function addExtrudedBuildingLayer(map) {
-
+export default function addExtrudedBuildingLayer(map, mapStyle) {
     const extrudedLayerName = '3d-buildings'
     const extrudedLayerAbsent = !(Object.keys(map.current.style._layers).find(layer => layer == extrudedLayerName))
     if (extrudedLayerAbsent) {
@@ -11,8 +10,7 @@ export default function addExtrudedBuildingLayer(map) {
             type: "fill-extrusion",
             minzoom: 12,
             paint: {
-                "fill-extrusion-color": "#ECF0F1",
-
+                "fill-extrusion-color": mapStyle == 'light' ? '#4A4A4A' : '#ECF0F1', //TODO: Programmatically change color based on map style
                 // Use an 'interpolate' expression to
                 // add a smooth transition effect to
                 // the buildings as the user zooms in.

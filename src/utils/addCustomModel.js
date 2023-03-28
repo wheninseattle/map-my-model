@@ -3,7 +3,9 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import mapboxgl from "!mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
 
 export default function addModelLayer(file, lng, lat, map, existingLayer) {
+    // Code largely adapted from https://docs.mapbox.com/mapbox-gl-js/example/3d-model/
     // Documentation for Three.js OBJLoader: https://threejs.org/docs/#examples/en/loaders/OBJLoader
+
     // parameters to ensure the model is georeferenced correctly on the map
     const modelOrigin = [lng, lat];
     const modelAltitude = 0;
